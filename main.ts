@@ -18,8 +18,11 @@ if (!png.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error('entry.png is not
 // The gate takes only a whole PNG: a truncated file would lose its closing IEND chunk.
 if (png.subarray(png.length - 8, png.length - 4).toString('latin1') !== 'IEND') throw new Error('entry.png is truncated (no IEND)');
 if (png.length > MAX_BYTES) throw new Error(`entry.png is ${png.length} bytes, over ${MAX_BYTES}`);
+// Width and height are only where we read them if IHDR is the first chunk, as the PNG spec requires.
+if (png.subarray(12, 16).toString('latin1') !== 'IHDR') throw new Error('entry.png does not start with an IHDR chunk');
 const width = png.readUInt32BE(16);
 const height = png.readUInt32BE(20);
+if (width === 0 || height === 0) throw new Error(`entry.png has an empty size, ${width}x${height}`);
 if (width > SIDE || height > SIDE) throw new Error(`entry.png is ${width}x${height}, over ${SIDE}x${SIDE}`);
 
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
